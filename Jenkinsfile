@@ -23,22 +23,28 @@ pipeline {
             }
         }
 
-        stage("Push to Docker Hub") {
+        stage('Push to Docker Hub') {
     steps {
         withCredentials([usernamePassword(
-            credentialsId: "dockerhub-creds",
-            usernameVariable: "DOCKERHUB_USER",
-            passwordVariable: "DOCKERHUB_PASS"
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_PASS'
         )]) {
             powershell """
-                Write-Host "Logging in to Docker Hub..."
+                Write-Host "==== Docker Login Output ===="
                 echo $Env:DOCKERHUB_PASS | docker login -u $Env:DOCKERHUB_USER --password-stdin
 
-                Write-Host "Pushing images..."
+                Write-Host "==== Docker Images Before Push ===="
+                docker images
+
+                Write-Host "==== Tagging Image ===="
                 docker tag ${Env:IMAGE_NAME}:${Env:BUILD_NUMBER} ${Env:IMAGE_NAME}:latest
+
+                Write-Host "==== Pushing Tagged Images ===="
                 docker push ${Env:IMAGE_NAME}:${Env:BUILD_NUMBER}
                 docker push ${Env:IMAGE_NAME}:latest
 
+                Write-Host "==== Docker Logout ===="
                 docker logout
             """
         }
