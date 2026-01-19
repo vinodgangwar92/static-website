@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any   // Jenkins is already running on Windows
 
     environment {
         DOCKERHUB_CREDS = "dockerhub-creds"
@@ -7,33 +7,45 @@ pipeline {
     }
 
     stages {
+
         stage("Checkout Code") {
             steps {
-                git "https://github.com/vinodgangwar92/static-website.git"
+                git branch: "main",
+                    url: "https://github.com/vinodgangwar92/static-website.git"
             }
         }
 
         stage("Build Docker Image") {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+                powershell '''
+                    docker version
+                    docker build -t vinodgangwar92/static-website:%BUILD_NUMBER% .
+                '''
             }
         }
 
         stage("Push to Docker Hub") {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: "${DOCKERHUB_CREDS}",
+                    credentialsId: "dockerhub-creds",
                     usernameVariable: "DOCKER_USER",
                     passwordVariable: "DOCKER_PASS"
                 )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker push ${IMAGE_NAME}:latest
+                    powershell '''
+                        echo $Env:DOCKER_PASS | docker login -u $Env:DOCKER_USER --password-stdin
+                        docker tag vinodgangwar92/static-website:%BUILD_NUMBER% vinodgangwar92/static-website:latest
+                        docker push vinodgangwar92/static-website:%BUILD_NUMBER%
+                        docker push vinodgangwar92/static-website:latest
                         docker logout
-                    """
+                    '''
                 }
             }
+        }
+    }
+
+    post {
+        always {
+            echo "Build #${BUILD_NUMBER} completed"
         }
     }
 }
