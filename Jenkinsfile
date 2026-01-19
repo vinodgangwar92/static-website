@@ -1,52 +1,37 @@
 pipeline {
-    agent {
-        label "windows"
-    }
-
-    environment {
-        DOCKERHUB_CREDS = "dockerhub-creds"
-        IMAGE_NAME = "vinodgangwar92/static-website"
-    }
+    agent any
 
     stages {
-
-        stage("Checkout Code") {
+        stage('Checkout') {
             steps {
-                git branch: "main",
-                    url: "https://github.com/vinodgangwar92/static-website.git"
+                git branch: 'main',
+                    url: 'https://github.com/vinodgangwar92/static-website.git'
             }
         }
 
-        stage("Build Docker Image") {
+        stage('Build Docker Image') {
             steps {
-                powershell """
-                    docker build -t ${env.IMAGE_NAME}:${env.BUILD_NUMBER} .
-                    docker tag ${env.IMAGE_NAME}:${env.BUILD_NUMBER} ${env.IMAGE_NAME}:latest
-                """
+                bat 'docker build -t static-website:latest .'
             }
         }
 
-        stage("Push to Docker Hub") {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: env.DOCKERHUB_CREDS,
-                    usernameVariable: "DOCKERHUB_USER",
-                    passwordVariable: "DOCKERHUB_PASS"
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    powershell """
-                        echo $Env:DOCKERHUB_PASS | docker login -u $Env:DOCKERHUB_USER --password-stdin
-                        docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER}
-                        docker push ${env.IMAGE_NAME}:latest
-                        docker logout
-                    """
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
                 }
             }
         }
-    }
 
-    post {
-        always {
-            echo "Build #${env.BUILD_NUMBER} completed"
+        stage('Push Image') {
+            steps {
+                bat 'docker tag static-website:latest vinodgangwar92/static-website:latest'
+                bat 'docker push vinodgangwar92/static-website:latest'
+            }
         }
     }
 }
