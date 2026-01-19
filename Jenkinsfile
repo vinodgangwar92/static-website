@@ -33,4 +33,17 @@ pipeline {
                     powershell """
                         echo $Env:DOCKERHUB_PASS | docker login -u $Env:DOCKERHUB_USER --password-stdin
                         docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER}
-                        docker push ${env.IMAGE_NAME}:latest_
+                        docker push ${env.IMAGE_NAME}:latest
+                        docker logout
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Build #${env.BUILD_NUMBER} completed"
+        }
+    }
+}
