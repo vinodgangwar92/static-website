@@ -1,10 +1,8 @@
 pipeline {
-    agent {
-        label "windows"        // Jenkins node with Windows
-    }
+    agent any
 
     environment {
-        DOCKERHUB_CREDS = "dockerhub-creds"  
+        DOCKERHUB_CREDS = "dockerhub-creds"
         IMAGE_NAME = "vinodgangwar92/static-website"
     }
 
@@ -17,8 +15,8 @@ pipeline {
 
         stage("Build Docker Image") {
             steps {
-                powershell """
-                    docker build -t ${env.IMAGE_NAME}:${env.BUILD_NUMBER} .
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
                 """
             }
         }
@@ -26,14 +24,14 @@ pipeline {
         stage("Push to Docker Hub") {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: env.DOCKERHUB_CREDS,
+                    credentialsId: "${DOCKERHUB_CREDS}",
                     usernameVariable: "DOCKERHUB_USER",
                     passwordVariable: "DOCKERHUB_PASS"
                 )]) {
-                    powershell """
-                        echo $Env:DOCKERHUB_PASS | docker login -u $Env:DOCKERHUB_USER --password-stdin
-                        docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER}
-                        docker push ${env.IMAGE_NAME}:latest
+                    sh """
+                        echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                        docker push ${IMAGE_NAME}:latest
                         docker logout
                     """
                 }
@@ -43,7 +41,7 @@ pipeline {
 
     post {
         always {
-            echo "Build #${env.BUILD_NUMBER} completed"
+            echo "Build #${BUILD_NUMBER} completed"
         }
     }
 }
