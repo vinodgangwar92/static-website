@@ -1,5 +1,5 @@
 pipeline {
-    agent any   // Jenkins is already running on Windows
+    agent any
 
     environment {
         DOCKERHUB_CREDS = "dockerhub-creds"
@@ -8,44 +8,44 @@ pipeline {
 
     stages {
 
-        stage("Checkout Code") {
+        stage('Checkout Code') {
             steps {
-                git branch: "main",
-                    url: "https://github.com/vinodgangwar92/static-website.git"
+                git branch: 'main', url: 'https://github.com/vinodgangwar92/static-website.git'
             }
         }
 
-        stage("Build Docker Image") {
+        stage('Build Docker Image') {
             steps {
-                powershell '''
-                    docker version
-                    docker build -t vinodgangwar92/static-website:%BUILD_NUMBER% .
-                '''
+                powershell """
+                  docker version
+                  docker build -t ${env.IMAGE_NAME}:${env.BUILD_NUMBER} .
+                """
             }
         }
 
-        stage("Push to Docker Hub") {
+        stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: "dockerhub-creds",
+                    credentialsId: "${DOCKERHUB_CREDS}",
                     usernameVariable: "DOCKER_USER",
                     passwordVariable: "DOCKER_PASS"
                 )]) {
-                    powershell '''
-                        echo $Env:DOCKER_PASS | docker login -u $Env:DOCKER_USER --password-stdin
-                        docker tag vinodgangwar92/static-website:%BUILD_NUMBER% vinodgangwar92/static-website:latest
-                        docker push vinodgangwar92/static-website:%BUILD_NUMBER%
-                        docker push vinodgangwar92/static-website:latest
-                        docker logout
-                    '''
+                    powershell """
+                      echo $Env:DOCKER_PASS | docker login -u $Env:DOCKER_USER --password-stdin
+                      docker tag ${env.IMAGE_NAME}:${env.BUILD_NUMBER} ${env.IMAGE_NAME}:latest
+                      docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER}
+                      docker push ${env.IMAGE_NAME}:latest
+                      docker logout
+                    """
                 }
             }
         }
+
     }
 
     post {
         always {
-            echo "Build #${BUILD_NUMBER} completed"
+            echo "Build #${env.BUILD_NUMBER} finished"
         }
     }
 }
