@@ -15,9 +15,7 @@ pipeline {
 
         stage("Build Docker Image") {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                """
+                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
             }
         }
 
@@ -25,11 +23,11 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: "${DOCKERHUB_CREDS}",
-                    usernameVariable: "DOCKERHUB_USER",
-                    passwordVariable: "DOCKERHUB_PASS"
+                    usernameVariable: "DOCKER_USER",
+                    passwordVariable: "DOCKER_PASS"
                 )]) {
                     sh """
-                        echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push ${IMAGE_NAME}:${BUILD_NUMBER}
                         docker push ${IMAGE_NAME}:latest
                         docker logout
