@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage("Checkout Code") {
             steps {
-                git branch: "main", url: "https://github.com/vinodgangwar92/static-website.git"
+                git "https://github.com/vinodgangwar92/static-website.git"
             }
         }
 
@@ -34,12 +34,6 @@ pipeline {
                     """
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo "Build #${BUILD_NUMBER} completed"
         }
     }
 }
